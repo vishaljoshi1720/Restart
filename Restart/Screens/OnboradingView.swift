@@ -1,0 +1,185 @@
+//
+//  OnboradingView.swift
+//  Restart
+//
+//  Created by Vishal Joshi on 07/12/21.
+//
+
+import SwiftUI
+
+struct OnboradingView: View {
+    @AppStorage("onboarding") var isOnboardingActive : Bool = true
+    
+    @State private var buttonWidth : Double = UIScreen.main.bounds.width - 80
+    @State private var buttonOffset : CGFloat = 0
+    @State private var isAnimatiing : Bool = false
+    @State private var imageOffset : CGSize = CGSize(width: 0, height: 0)
+    @State private var indicatorOpacity : Double = 1.0
+    @State private var titleText : String = "Share."
+    
+    let hapticFeedback = UINotificationFeedbackGenerator()
+    //@State private var imageOffset : CGSize = .zero(shortcut)
+
+    
+    var body: some View {
+        ZStack {
+            Color("ColorBlue")
+                .ignoresSafeArea(.all, edges: .all)
+            
+            VStack(spacing:20) {
+               Spacer()
+                
+                VStack(spacing:0) {
+                    Text(titleText)
+                        .font(.system(size:60))
+                        .fontWeight(.heavy)
+                        .foregroundColor(.white)
+                        .transition(.opacity)
+                        .id(titleText)
+                
+                
+                    Text("""
+                    It's not how much we give but
+                    how much love we put into giving
+                    """)
+                        .font(.title3)
+                        .fontWeight(.light)
+                        .foregroundColor(.white)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 10)
+                }
+                .opacity(isAnimatiing ? 1 : 0)
+                .offset(y: isAnimatiing ? 0 : -40)
+                .animation(.easeOut(duration: 1), value: isAnimatiing)
+                
+                ZStack{
+                    CircleGroupView(ShapeColor:.white, ShapeOpacity: 0.2)
+                        .offset(x: imageOffset.width * -1)
+                        .blur(radius: abs(imageOffset.width/5))
+                        .animation(.easeOut(duration: 1), value: imageOffset)
+                    Image("character-1")
+                        .resizable()
+                        .scaledToFit()
+                        .opacity(isAnimatiing ? 1 : 0)
+                        .animation(.easeOut(duration: 0.5), value: isAnimatiing)
+                        .offset(x: imageOffset.width*1.2, y: 0)
+                        .rotationEffect(.degrees(Double( imageOffset.width / 20 )))
+                        .gesture(
+                            DragGesture()
+                                .onChanged{ gesture in
+                                    if abs(imageOffset.width) <= 150{
+                                        imageOffset = gesture.translation
+                                        
+                                        withAnimation(.linear(duration: 0.25)){
+                                            indicatorOpacity = 0
+                                            titleText = "Give."
+                                        }
+                                    }
+                                    
+                                }
+                                .onEnded{_ in
+                                    imageOffset = .zero
+                                    
+                                    withAnimation(.linear(duration: 0.25)){
+                                        indicatorOpacity = 1
+                                        titleText = "Share."
+                                    }
+                                }
+                            
+                        )
+                        .animation(.easeOut(duration: 1), value: imageOffset)
+                }
+                .overlay(
+                    Image(systemName: "arrow.left.and.right.circle")
+                        .font(.system(size: 44, weight: .ultraLight))
+                        .foregroundColor(.white)
+                        .offset(y:20)
+                        .opacity( isAnimatiing ? 1 : 0)
+                        .animation(.easeOut(duration:1).delay(2), value: isAnimatiing)
+                        .opacity(indicatorOpacity)
+                    ,   alignment: .bottom
+                )
+                
+                Spacer()
+                
+                ZStack{
+                    Capsule()
+                        .fill(Color.white.opacity(0.2))
+                    Capsule()
+                        .fill(Color.white.opacity(0.2))
+                        .padding(8)
+                    
+                    Text("Get Started")
+                        .font(.system(.title3,design: .rounded))
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                        .offset(x:20)
+                    
+                    HStack{
+                        Capsule()
+                            .fill(Color("ColorRed"))
+                            .frame(width: buttonOffset+80)
+                        Spacer()
+                    }
+                    
+                    HStack {
+                        ZStack{
+                            Circle()
+                                .fill(Color("ColorRed"))
+                            Circle()
+                                .fill(.black.opacity(0.15))
+                                .padding(8)
+                            Image(systemName: "chevron.right.2")
+                                .font(.system(size: 24, weight: .bold))
+                            
+                        }
+                        .foregroundColor(.white)
+                        .frame(width: 80, height: 80, alignment: .center)
+                        .offset(x:buttonOffset )
+                        .gesture(
+                            DragGesture()
+                                .onChanged{ gesture in
+                                    if gesture.translation.width > 0 && buttonOffset <= buttonWidth-80{
+                                        buttonOffset = gesture.translation.width
+                                    }
+                                    
+                                }
+                                .onEnded{_ in
+                                    withAnimation(Animation.easeOut(duration: 0.4)){
+                                        if buttonOffset > buttonWidth / 2 {
+                                            hapticFeedback.notificationOccurred(.success)
+                                            playSound(sound: "chimeup", type: "mp3")
+                                            buttonOffset = buttonWidth - 80
+                                            isOnboardingActive = false
+                                        }else{
+                                            hapticFeedback.notificationOccurred(.warning)
+                                            buttonOffset = 0
+                                        }
+                                    }
+                                    
+                                }
+                        )
+                        Spacer()
+                    }
+                }
+                .frame(width:buttonWidth, height: 80, alignment: .center)
+                .padding()
+                .opacity(isAnimatiing ? 1 : 0)
+                .offset(y: isAnimatiing ? 0 : 40)
+                .animation(.easeOut(duration: 1), value: isAnimatiing)
+
+            }
+         
+        }
+        .onAppear(perform: {
+            isAnimatiing=true
+        })
+        .preferredColorScheme(.dark)
+    }
+}
+
+struct OnboradingView_Previews: PreviewProvider {
+    static var previews: some View {
+        OnboradingView()
+    }
+}
